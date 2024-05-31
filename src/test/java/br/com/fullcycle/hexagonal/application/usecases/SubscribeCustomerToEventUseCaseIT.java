@@ -9,8 +9,6 @@ import br.com.fullcycle.hexagonal.infrastructure.models.TicketStatus;
 import br.com.fullcycle.hexagonal.infrastructure.repositories.CustomerRepository;
 import br.com.fullcycle.hexagonal.infrastructure.repositories.EventRepository;
 import br.com.fullcycle.hexagonal.infrastructure.repositories.TicketRepository;
-import br.com.fullcycle.hexagonal.infrastructure.services.CustomerService;
-import br.com.fullcycle.hexagonal.infrastructure.services.EventService;
 import io.hypersistence.tsid.TSID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,9 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
 
     @Autowired
-    private CustomerService customerService;
-    @Autowired
-    private EventService eventService;
+    private SubscribeCustomerToEventUseCase useCase;
     @Autowired
     private CustomerRepository customerRepository;
     @Autowired
@@ -45,15 +41,13 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
     
     @Test
     @DisplayName("Deve comprar um ticket de um evento")
-    public void testReserveTicket() {
+    void testReserveTicket() {
 
         final var expectedTicketsSize = 1;
         final var aCustomer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
         final var aEvent = createEvent("Disney on Ice", 10);
 
         final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getId(), aCustomer.getId());
-
-        final var useCase = new SubscribeCustomerToEventUseCase(customerService, eventService);
         final var output = useCase.execute(subscribeInput);
 
         assertEquals(aEvent.getId(), output.eventId());
@@ -63,15 +57,13 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Não deve comprar um ticket de um evento que não existe")
-    public void testReserveTicketWithoutEvent() {
+    void testReserveTicketWithoutEvent() {
 
         final var expectedError = "Event not found";
         final var customer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
         final var eventID = TSID.fast().toLong();
 
         final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(eventID, customer.getId());
-
-        final var useCase = new SubscribeCustomerToEventUseCase(customerService, eventService);
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());
@@ -79,15 +71,13 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Não deve comprar um ticket de um cliente não existente")
-    public void testReserveTicketWithoutCustomer() {
+    void testReserveTicketWithoutCustomer() {
 
         final var expectedError = "Customer not found";
         final var customerID = TSID.fast().toLong();
         final var eventID = TSID.fast().toLong();
 
         final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(eventID, customerID);
-
-        final var useCase = new SubscribeCustomerToEventUseCase(customerService, eventService);
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());
@@ -95,7 +85,7 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Um mesmo cliente não pode comprar dois tickets para o mesmo evento")
-    public void testReserveTicketMoreThanOnce() {
+    void testReserveTicketMoreThanOnce() {
 
         final var aCustomer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
         final var aEvent = createEvent("Event test", 10);
@@ -103,8 +93,6 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
         final var expectedError = "Email already registered";
 
         final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getId(), aCustomer.getId());
-
-        final var useCase = new SubscribeCustomerToEventUseCase(customerService, eventService);
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());
@@ -112,15 +100,13 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Um cliente não deve comprar um ticket de um evento esgotado")
-    public void testReserveTicketWithoutSlots() {
+    void testReserveTicketWithoutSlots() {
 
         final var expectedError = "Event sold out";
         final var aCustomer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
         final var aEvent = createEvent("Event test", 0);
 
         final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getId(), aCustomer.getId());
-
-        final var useCase = new SubscribeCustomerToEventUseCase(customerService, eventService);
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());

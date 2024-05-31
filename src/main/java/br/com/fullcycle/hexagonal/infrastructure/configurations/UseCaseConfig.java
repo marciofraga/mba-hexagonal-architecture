@@ -22,7 +22,11 @@ public class UseCaseConfig {
     private final PartnerService partnerService;
 
 
-    public UseCaseConfig(CustomerService customerService, EventService eventService, PartnerService partnerService) {
+    public UseCaseConfig(
+            CustomerService customerService, 
+            EventService eventService, 
+            PartnerService partnerService
+    ) {
         this.customerService = Objects.requireNonNull(customerService);
         this.eventService = Objects.requireNonNull(eventService);
         this.partnerService = Objects.requireNonNull(partnerService);

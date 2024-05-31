@@ -3,30 +3,29 @@ package br.com.fullcycle.hexagonal.application.usecases;
 import br.com.fullcycle.hexagonal.AbstractIntegrationTest;
 import br.com.fullcycle.hexagonal.infrastructure.models.Customer;
 import br.com.fullcycle.hexagonal.infrastructure.repositories.CustomerRepository;
-import br.com.fullcycle.hexagonal.infrastructure.services.CustomerService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Optional;
 import java.util.UUID;
-
-import static org.mockito.Mockito.when;
 
 class GetCustomerByIdUseCaseIT extends AbstractIntegrationTest {
 
     @Autowired
-    private CustomerService customerService;
+    private GetCustomerByIdUseCase useCase;
     @Autowired
     private CustomerRepository customerRepository;
 
-
+    @BeforeEach
+    void tearDown() {
+        customerRepository.deleteAll();
+    }
 
     @Test
     @DisplayName("Deve obter um cliente por id")
-    public void testGetById() {
+    void testGetById() {
         final var expectedCPF = "123.456.789-01";
         final var expectedEmail = "john.doe@gmail.com";
         final var expectedName = "John Doe";
@@ -34,8 +33,6 @@ class GetCustomerByIdUseCaseIT extends AbstractIntegrationTest {
         final var aCustomer = createCustomer(expectedCPF, expectedEmail, expectedName);
 
         final var input = new GetCustomerByIdUseCase.Input(aCustomer.getId());
-
-        final var useCase = new GetCustomerByIdUseCase(customerService);
         final var output = useCase.execute(input).get();
         // then
         Assertions.assertEquals(aCustomer.getId(), output.id());
@@ -46,13 +43,11 @@ class GetCustomerByIdUseCaseIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Deve obter vazio ao tentar recuperar um cliente não existente por id")
-    public void testGetByIdWIthInvalidId() {
+    void testGetByIdWIthInvalidId() {
         // given
         final var expectedID = UUID.randomUUID().getMostSignificantBits();
 
         final var input = new GetCustomerByIdUseCase.Input(expectedID);
-
-        final var useCase = new GetCustomerByIdUseCase(customerService);
         final var output = useCase.execute(input);
 
         // then

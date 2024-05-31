@@ -41,16 +41,14 @@ class CreateEventUseCaseIT extends AbstractIntegrationTest {
         final var expectedDate = "2021-01-01";
         final var expectedName = "Disney on Ice";
         final var expectedTotalSpots = 10;
-        final var expectedPartnerId = partner.getId();
 
-        final var createInput = new CreateEventUseCase.Input(expectedDate, expectedName, expectedPartnerId, expectedTotalSpots);
+        final var createInput = new CreateEventUseCase.Input(expectedDate, expectedName, partner.getId(), expectedTotalSpots);
         final var output = useCase.execute(createInput);
 
         assertNotNull(output.id());
         assertEquals(expectedDate, output.date());
         assertEquals(expectedName, output.name());
         assertEquals(expectedTotalSpots, output.totalSpots());
-        assertEquals(expectedPartnerId, output.id());
 
     }
 

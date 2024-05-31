@@ -5,6 +5,7 @@ import br.com.fullcycle.hexagonal.infrastructure.models.Partner;
 import br.com.fullcycle.hexagonal.infrastructure.repositories.PartnerRepository;
 import br.com.fullcycle.hexagonal.infrastructure.services.PartnerService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -18,13 +19,18 @@ import static org.mockito.Mockito.when;
 class GetPartnerByIdUseCaseIT extends AbstractIntegrationTest {
 
     @Autowired
-    private PartnerService partnerService;
+    private GetPartnerByIdUseCase useCase;
     @Autowired
     private PartnerRepository partnerRepository;
 
+    @BeforeEach
+    void tearDown() {
+        partnerRepository.deleteAll();
+    }
+    
     @Test
     @DisplayName("Deve obter um parceiro por id")
-    public void testGetById() {
+    void testGetById() {
         final var expectedCNPJ = "123.456.789-01";
         final var expectedEmail = "john.doe@gmail.com";
         final var expectedName = "John Doe";
@@ -32,8 +38,6 @@ class GetPartnerByIdUseCaseIT extends AbstractIntegrationTest {
         final var aPartner = createPartner(expectedCNPJ, expectedEmail, expectedName);
 
         final var input = new GetPartnerByIdUseCase.Input(aPartner.getId());
-
-        final var useCase = new GetPartnerByIdUseCase(partnerService);
         final var output = useCase.execute(input).get();
         // then
         Assertions.assertEquals(aPartner.getId(), output.id());
@@ -44,13 +48,11 @@ class GetPartnerByIdUseCaseIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Deve obter vazio ao tentar recuperar um cliente não existente por id")
-    public void testGetByIdWIthInvalidId() {
+    void testGetByIdWIthInvalidId() {
         // given
         final var expectedID = UUID.randomUUID().getMostSignificantBits();
 
         final var input = new GetPartnerByIdUseCase.Input(expectedID);
-
-        final var useCase = new GetPartnerByIdUseCase(partnerService);
         final var output = useCase.execute(input);
 
         // then
