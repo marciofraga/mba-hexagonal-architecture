@@ -1,6 +1,6 @@
 package br.com.fullcycle.hexagonal.infrastructure.rest;
 
-import br.com.fullcycle.hexagonal.application.usecases.CreateCustomerUseCase;
+import br.com.fullcycle.hexagonal.application.usecases.event.CreateEventUseCase;
 import br.com.fullcycle.hexagonal.infrastructure.dtos.NewEventDTO;
 import br.com.fullcycle.hexagonal.infrastructure.dtos.SubscribeDTO;
 import br.com.fullcycle.hexagonal.infrastructure.models.Customer;
@@ -9,7 +9,11 @@ import br.com.fullcycle.hexagonal.infrastructure.repositories.CustomerRepository
 import br.com.fullcycle.hexagonal.infrastructure.repositories.EventRepository;
 import br.com.fullcycle.hexagonal.infrastructure.repositories.PartnerRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,9 +62,9 @@ class EventControllerTest {
 
     @Test
     @DisplayName("Deve criar um evento")
-    public void testCreate() throws Exception {
+    void testCreate() throws Exception {
 
-        var event = new NewEventDTO("Disney on Ice", "2021-01-01", 100, disney.getId());
+        var event = new NewEventDTO("Disney on Ice", "2021-01-01", 100, disney.getId().toString());
 
         final var result = this.mvc.perform(
                         MockMvcRequestBuilders.post("/events")
@@ -80,9 +84,9 @@ class EventControllerTest {
     @Test
     @Transactional
     @DisplayName("Deve comprar um ticket de um evento")
-    public void testReserveTicket() throws Exception {
+    void testReserveTicket() throws Exception {
 
-        var event = new NewEventDTO("Disney on Ice", "2021-01-01", 100, disney.getId());
+        var event = new NewEventDTO("Disney on Ice", "2021-01-01", 100, disney.getId().toString());
 
         final var createResult = this.mvc.perform(
                         MockMvcRequestBuilders.post("/events")
@@ -93,7 +97,7 @@ class EventControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.id").isNumber())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        var eventId = mapper.readValue(createResult, CreateCustomerUseCase.Output.class).id();
+        var eventId = mapper.readValue(createResult, CreateEventUseCase.Output.class).id();
         var sub = new SubscribeDTO(johnDoe.getId(), null);
 
         this.mvc.perform(
@@ -104,7 +108,7 @@ class EventControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        var actualEvent = eventRepository.findById(eventId).get();
+        var actualEvent = eventRepository.findById(Long.parseLong(eventId)).get();
         Assertions.assertEquals(1, actualEvent.getTickets().size());
     }
 }
