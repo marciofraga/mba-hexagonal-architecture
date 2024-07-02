@@ -36,25 +36,25 @@ public class EventController {
         try {
             final var output = createEventUseCase.execute(
                     new CreateEventUseCase.Input(
-                            dto.date(), 
-                            dto.name(), 
-                            dto.partnerID(), 
+                            dto.date(),
+                            dto.name(),
+                            dto.partnerID(),
                             dto.totalSpots()
                     ));
             return ResponseEntity.created(URI.create("/events/" + output.id())).body(output);
-        } catch(ValidationException ex) {
+        } catch (ValidationException ex) {
             return ResponseEntity.unprocessableEntity().body(ex.getMessage());
         }
     }
 
     @Transactional
     @PostMapping(value = "/{id}/subscribe")
-    public ResponseEntity<?> subscribe(@PathVariable Long id, @RequestBody SubscribeDTO dto) {
+    public ResponseEntity<?> subscribe(@PathVariable String id, @RequestBody SubscribeDTO dto) {
         try {
             final var output = subscribeCustomerToEventUseCase.execute(
-                    new SubscribeCustomerToEventUseCase.Input(id.toString(), dto.customerId().toString()));
+                    new SubscribeCustomerToEventUseCase.Input(id, dto.customerId()));
             return ResponseEntity.ok(output);
-        } catch(ValidationException ex) {
+        } catch (ValidationException ex) {
             return ResponseEntity.unprocessableEntity().body(ex.getMessage());
         }
     }

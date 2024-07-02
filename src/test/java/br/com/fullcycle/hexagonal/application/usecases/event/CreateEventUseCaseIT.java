@@ -1,12 +1,11 @@
 package br.com.fullcycle.hexagonal.application.usecases.event;
 
 import br.com.fullcycle.hexagonal.AbstractIntegrationTest;
+import br.com.fullcycle.hexagonal.application.domain.partner.Partner;
 import br.com.fullcycle.hexagonal.application.domain.partner.PartnerId;
 import br.com.fullcycle.hexagonal.application.exceptions.ValidationException;
-import br.com.fullcycle.hexagonal.application.usecases.event.CreateEventUseCase;
-import br.com.fullcycle.hexagonal.infrastructure.models.Partner;
-import br.com.fullcycle.hexagonal.infrastructure.repositories.EventRepository;
-import br.com.fullcycle.hexagonal.infrastructure.repositories.PartnerRepository;
+import br.com.fullcycle.hexagonal.application.repositories.EventRepository;
+import br.com.fullcycle.hexagonal.application.repositories.PartnerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,17 +34,19 @@ class CreateEventUseCaseIT extends AbstractIntegrationTest {
     @DisplayName("Deve criar um evento")
     void testCreate() {
 
-        final var partner = createPartner("12345678900", "john.doe@gmail.com", "John Doe");
+        final var partner = createPartner("12.345.678/0001-00", "john.doe@gmail.com", "John Doe");
         final var expectedDate = "2021-01-01";
         final var expectedName = "Disney on Ice";
         final var expectedTotalSpots = 10;
+        final var expectedPartnerId = partner.getPartnerId().value();
 
-        final var createInput = new CreateEventUseCase.Input(expectedDate, expectedName, partner.getId().toString(), expectedTotalSpots);
+        final var createInput = new CreateEventUseCase.Input(expectedDate, expectedName, expectedPartnerId, expectedTotalSpots);
         final var output = useCase.execute(createInput);
 
         assertNotNull(output.id());
         assertEquals(expectedDate, output.date());
         assertEquals(expectedName, output.name());
+        assertEquals(expectedPartnerId, output.partnerId());
         assertEquals(expectedTotalSpots, output.totalSpots());
 
     }
@@ -69,10 +70,6 @@ class CreateEventUseCaseIT extends AbstractIntegrationTest {
     }
 
     private Partner createPartner(final String cnpj, final String email, final String name) {
-        final var partner = new Partner();
-        partner.setCnpj(cnpj);
-        partner.setEmail(email);
-        partner.setName(name);
-        return partnerRepository.save(partner);
+        return partnerRepository.create(Partner.create(name, cnpj, email));
     }
 }

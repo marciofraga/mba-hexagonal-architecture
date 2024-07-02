@@ -1,10 +1,9 @@
 package br.com.fullcycle.hexagonal.application.usecases.customer;
 
 import br.com.fullcycle.hexagonal.AbstractIntegrationTest;
+import br.com.fullcycle.hexagonal.application.domain.customer.Customer;
 import br.com.fullcycle.hexagonal.application.exceptions.ValidationException;
-import br.com.fullcycle.hexagonal.application.usecases.customer.CreateCustomerUseCase;
-import br.com.fullcycle.hexagonal.infrastructure.models.Customer;
-import br.com.fullcycle.hexagonal.infrastructure.repositories.CustomerRepository;
+import br.com.fullcycle.hexagonal.application.repositories.CustomerRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +19,7 @@ class CreateCustomerUseCaseIT extends AbstractIntegrationTest {
     private CustomerRepository customerRepository;
 
     @BeforeEach
-    void tearDown() {
+    void setUp() {
         customerRepository.deleteAll();
     }
 
@@ -65,7 +64,7 @@ class CreateCustomerUseCaseIT extends AbstractIntegrationTest {
         final var expectedName = "John Doe";
         final var expectedError = "Customer already exists";
 
-        createCustomer("249999999999", expectedEmail, expectedName);
+        createCustomer("249.999.999-99", expectedEmail, expectedName);
 
         final var createInput = new CreateCustomerUseCase.Input(expectedCPF, expectedEmail, expectedName);
 
@@ -75,10 +74,6 @@ class CreateCustomerUseCaseIT extends AbstractIntegrationTest {
     }
 
     private void createCustomer(final String cpf, final String email, final String name) {
-        final var aCustomer = new Customer();
-        aCustomer.setCpf(cpf);
-        aCustomer.setEmail(email);
-        aCustomer.setName(name);
-        customerRepository.save(aCustomer);
+        customerRepository.create(Customer.create(name, cpf, email));
     }
 }

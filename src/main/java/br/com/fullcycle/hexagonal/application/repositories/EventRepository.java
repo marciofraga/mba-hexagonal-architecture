@@ -11,4 +11,6 @@ public interface EventRepository {
     
     Event create(Event event);
     Event update(Event event);
+
+    void deleteAll();
 }

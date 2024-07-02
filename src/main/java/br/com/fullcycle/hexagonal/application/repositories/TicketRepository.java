@@ -11,4 +11,6 @@ public interface TicketRepository {
     
     Ticket create(Ticket event);
     Ticket update(Ticket event);
+
+    void deleteAll();
 }

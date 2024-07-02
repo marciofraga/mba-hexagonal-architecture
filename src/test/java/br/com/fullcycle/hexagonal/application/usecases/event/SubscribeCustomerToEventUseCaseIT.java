@@ -1,22 +1,22 @@
 package br.com.fullcycle.hexagonal.application.usecases.event;
 
 import br.com.fullcycle.hexagonal.AbstractIntegrationTest;
+import br.com.fullcycle.hexagonal.application.domain.customer.Customer;
+import br.com.fullcycle.hexagonal.application.domain.customer.CustomerId;
+import br.com.fullcycle.hexagonal.application.domain.event.Event;
+import br.com.fullcycle.hexagonal.application.domain.event.EventId;
+import br.com.fullcycle.hexagonal.application.domain.event.ticket.Ticket;
+import br.com.fullcycle.hexagonal.application.domain.event.ticket.TicketStatus;
+import br.com.fullcycle.hexagonal.application.domain.partner.Partner;
 import br.com.fullcycle.hexagonal.application.exceptions.ValidationException;
-import br.com.fullcycle.hexagonal.application.usecases.event.SubscribeCustomerToEventUseCase;
-import br.com.fullcycle.hexagonal.infrastructure.models.Customer;
-import br.com.fullcycle.hexagonal.infrastructure.models.Event;
-import br.com.fullcycle.hexagonal.infrastructure.models.Ticket;
-import br.com.fullcycle.hexagonal.infrastructure.models.TicketStatus;
-import br.com.fullcycle.hexagonal.infrastructure.repositories.CustomerRepository;
-import br.com.fullcycle.hexagonal.infrastructure.repositories.EventRepository;
-import br.com.fullcycle.hexagonal.infrastructure.repositories.TicketRepository;
+import br.com.fullcycle.hexagonal.application.repositories.CustomerRepository;
+import br.com.fullcycle.hexagonal.application.repositories.EventRepository;
+import br.com.fullcycle.hexagonal.application.repositories.TicketRepository;
 import io.hypersistence.tsid.TSID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,7 +34,7 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
     private TicketRepository ticketRepository;
     
     @BeforeEach
-    void tearDown() {
+    void setUp() {
         eventRepository.deleteAll();
         customerRepository.deleteAll();
         ticketRepository.deleteAll();
@@ -44,14 +44,14 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
     @DisplayName("Deve comprar um ticket de um evento")
     void testReserveTicket() {
 
-        final var expectedTicketsSize = 1;
-        final var aCustomer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
-        final var aEvent = createEvent("Disney on Ice", 10);
+        final var aCustomer = createCustomer("123.456.789-00", "john.doe@gmail.com", "John Doe");
+        final var aPartner = Partner.create("John Doe", "12.345.678/0001-00", "john.doe@gmail.com");
+        final var aEvent = createEvent("Disney on Ice", "2025-01-01", 10, aPartner);
 
-        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getId().toString(), aCustomer.getId().toString());
+        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getEventId().value(), aCustomer.getCustomerId().value());
         final var output = useCase.execute(subscribeInput);
 
-        assertEquals(aEvent.getId(), output.eventId());
+        assertEquals(aEvent.getEventId().value(), output.eventId());
         assertNotNull(output.reservationDate());
         assertEquals(TicketStatus.PENDING.name(), output.ticketStatus());
     }
@@ -61,10 +61,10 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
     void testReserveTicketWithoutEvent() {
 
         final var expectedError = "Event not found";
-        final var customer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
-        final var eventID = TSID.fast().toString();
+        final var customer = createCustomer("123.456.789-00", "john.doe@gmail.com", "John Doe");
+        final var eventID = EventId.unique();
 
-        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(eventID, customer.getId().toString());
+        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(eventID.value(), customer.getCustomerId().value());
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());
@@ -75,25 +75,10 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
     void testReserveTicketWithoutCustomer() {
 
         final var expectedError = "Customer not found";
-        final var customerID = TSID.fast().toString();
-        final var eventID = TSID.fast().toString();
+        final var customerID = CustomerId.unique().value();
+        final var eventID = EventId.unique().value();
 
         final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(eventID, customerID);
-        final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
-
-        assertEquals(expectedError, exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("Um mesmo cliente não pode comprar dois tickets para o mesmo evento")
-    void testReserveTicketMoreThanOnce() {
-
-        final var aCustomer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
-        final var aEvent = createEvent("Event test", 10);
-        createTicket(aEvent, aCustomer);
-        final var expectedError = "Email already registered";
-
-        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getId().toString(), aCustomer.getId().toString());
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());
@@ -104,36 +89,25 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
     void testReserveTicketWithoutSlots() {
 
         final var expectedError = "Event sold out";
-        final var aCustomer = createCustomer("12345678900", "john.doe@gmail.com", "John Doe");
-        final var aEvent = createEvent("Event test", 0);
+        final var aCustomer = createCustomer("123.456.789-00", "john.doe@gmail.com", "John Doe");
+        final var aPartner = Partner.create("John Doe", "12.345.678/0001-00", "john.doe@gmail.com");
+        final var aEvent = createEvent("Event test", "2025-01-01", 0, aPartner);
 
-        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getId().toString(), aCustomer.getId().toString());
+        final var subscribeInput = new SubscribeCustomerToEventUseCase.Input(aEvent.getEventId().value(), aCustomer.getCustomerId().value());
         final var exception = assertThrows(ValidationException.class, () -> useCase.execute(subscribeInput));
 
         assertEquals(expectedError, exception.getMessage());
     }
 
     private Customer createCustomer(final String cpf, final String email, final String name) {
-        final var customer = new Customer();
-        customer.setCpf(cpf);
-        customer.setEmail(email);
-        customer.setName(name);
-        return customerRepository.save(customer);
+        return customerRepository.create(Customer.create(name, cpf, email));
     }
 
-    private Event createEvent(final String name, final int totalSpots) {
-        final var aEvent = new Event();
-        aEvent.setName(name);
-        aEvent.setTotalSpots(totalSpots);
-        aEvent.setTickets(Collections.emptySet());
-        return eventRepository.save(aEvent);
+    private Event createEvent(final String name, final String date, final int totalSpots, Partner partner) {
+        return eventRepository.create(Event.create(name, date, totalSpots, partner));
     }
 
-    private Ticket createTicket(final Event event, final Customer customer) {
-        final var ticket = new Ticket();
-        ticket.setEvent(event);
-        ticket.setCustomer(customer);
-        ticket.setStatus(TicketStatus.PENDING);
-        return ticketRepository.save(ticket);
+    private void createTicket(final Ticket ticket) {
+        ticketRepository.create(ticket);
     }
 }

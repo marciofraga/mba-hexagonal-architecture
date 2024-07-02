@@ -41,9 +41,9 @@ public class CustomerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable Long id) {
+    public ResponseEntity<?> get(@PathVariable String id) {
         return getCustomerByIdUseCase
-                .execute(new GetCustomerByIdUseCase.Input(id.toString()))
+                .execute(new GetCustomerByIdUseCase.Input(id))
                 .map(ResponseEntity::ok)
                 .orElseGet(ResponseEntity.notFound()::build);
     }
