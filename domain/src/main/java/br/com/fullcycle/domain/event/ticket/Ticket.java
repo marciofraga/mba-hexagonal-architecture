@@ -1,17 +1,23 @@
 package br.com.fullcycle.domain.event.ticket;
 
+import br.com.fullcycle.domain.DomainEvent;
 import br.com.fullcycle.domain.customer.CustomerId;
 import br.com.fullcycle.domain.event.EventId;
+import br.com.fullcycle.domain.event.EventTicketId;
 import br.com.fullcycle.domain.exceptions.ValidationException;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import static java.util.Objects.isNull;
 
 public class Ticket {
     
     private final TicketId ticketId;
+    private final Set<DomainEvent> domainEvents;
     private CustomerId customerId;
     private EventId eventId;
     private TicketStatus status;
@@ -27,6 +33,7 @@ public class Ticket {
             final Instant reservedAt
     ) {
         this.ticketId = ticketId;
+        this.domainEvents = new HashSet<>();
         this.setCustomerId(customerId);
         this.setEventId(eventId);
         this.setStatus(status);
@@ -36,6 +43,12 @@ public class Ticket {
     
     public static Ticket create(final CustomerId customerId, final EventId eventId) {
         return new Ticket(TicketId.unique(), customerId, eventId, TicketStatus.PENDING, null, Instant.now());
+    }
+    
+    public static Ticket create(final EventTicketId eventTicketId, final CustomerId customerId, final EventId eventId) {
+        final var aTicket = create(customerId, eventId);
+        aTicket.domainEvents.add(new TicketCreated(aTicket.ticketId, eventTicketId, eventId, customerId));
+        return aTicket;
     }
 
     public TicketId ticketId() {
@@ -98,6 +111,10 @@ public class Ticket {
         this.reservedAt = reservedAt;
     }
 
+    public Set<DomainEvent> allDomainEvents() {
+        return Collections.unmodifiableSet(domainEvents);
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

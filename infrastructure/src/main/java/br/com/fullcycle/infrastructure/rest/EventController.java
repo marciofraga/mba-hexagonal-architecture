@@ -45,8 +45,7 @@ public class EventController {
             return ResponseEntity.unprocessableEntity().body(ex.getMessage());
         }
     }
-
-    @Transactional
+    
     @PostMapping(value = "/{id}/subscribe")
     public ResponseEntity<?> subscribe(@PathVariable String id, @RequestBody SubscribeDTO dto) {
         try {

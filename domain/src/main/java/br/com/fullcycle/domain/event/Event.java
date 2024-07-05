@@ -1,5 +1,6 @@
 package br.com.fullcycle.domain.event;
 
+import br.com.fullcycle.domain.DomainEvent;
 import br.com.fullcycle.domain.customer.CustomerId;
 import br.com.fullcycle.domain.event.ticket.Ticket;
 import br.com.fullcycle.domain.partner.Partner;
@@ -20,11 +21,12 @@ public class Event {
 
     private static final int ONE = 1;
     private final EventId eventId;
+    private final Set<EventTicket> tickets;
+    private final Set<DomainEvent> domainEvents;
     private Name name;
     private LocalDate date;
     private int totalSpots;
     private PartnerId partnerId;
-    private Set<EventTicket> tickets;
 
     public Event(
             EventId eventId, 
@@ -48,6 +50,7 @@ public class Event {
         
         this.eventId = eventId;
         this.tickets = tickets != null ? tickets : new HashSet<>(0);
+        this.domainEvents = new HashSet<>(2);
     }
     
     public static Event create(String name, String date, Integer totalSpots, Partner partner) {
@@ -96,7 +99,11 @@ public class Event {
         return Collections.unmodifiableSet(tickets);
     }
 
-    public Ticket reserveTicket(final CustomerId customerId) {
+    public Set<DomainEvent> allDomainEvents() {
+        return Collections.unmodifiableSet(domainEvents);
+    }
+
+    public EventTicket reserveTicket(final CustomerId customerId) {
         this.getTickets().stream()
                 .filter(it -> Objects.equals(it.getCustomerId(), customerId))
                 .findFirst()
@@ -108,9 +115,10 @@ public class Event {
             throw new ValidationException("Event sold out");
         }
         
-        final var newTicket = Ticket.create(customerId, getEventId());
-        this.tickets.add(new EventTicket(newTicket.ticketId(), getEventId(), customerId, getTickets().size() + 1));
-        return newTicket;
+        final var aTicket = EventTicket.create(getEventId(), customerId, getTickets().size() + 1);
+        this.tickets.add(aTicket);
+        this.domainEvents.add(new EventTicketReserved(aTicket.getEventTicketId(), getEventId(), customerId));
+        return aTicket;
     }
 
     private void setDate(String date) {

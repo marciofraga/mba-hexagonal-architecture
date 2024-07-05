@@ -5,6 +5,7 @@ import br.com.fullcycle.domain.customer.CustomerId;
 import br.com.fullcycle.domain.customer.CustomerRepository;
 import br.com.fullcycle.domain.event.EventId;
 import br.com.fullcycle.domain.event.EventRepository;
+import br.com.fullcycle.domain.event.EventTicket;
 import br.com.fullcycle.domain.event.ticket.Ticket;
 import br.com.fullcycle.domain.event.ticket.TicketRepository;
 import br.com.fullcycle.domain.exceptions.ValidationException;
@@ -16,15 +17,12 @@ public class SubscribeCustomerToEventUseCase extends UseCase<SubscribeCustomerTo
 
     private final CustomerRepository customerRepository;
     private final EventRepository eventRepository;
-    private final TicketRepository ticketRepository;
 
     public SubscribeCustomerToEventUseCase(
             final CustomerRepository customerRepository, 
-            final EventRepository eventRepository,
-            final TicketRepository ticketRepository) {
+            final EventRepository eventRepository) {
         this.customerRepository = Objects.requireNonNull(customerRepository);
         this.eventRepository = Objects.requireNonNull(eventRepository);
-        this.ticketRepository = Objects.requireNonNull(ticketRepository);
     }
 
     @Override
@@ -35,14 +33,13 @@ public class SubscribeCustomerToEventUseCase extends UseCase<SubscribeCustomerTo
         var anEvent = eventRepository.eventOfId(EventId.with(input.eventId))
                 .orElseThrow(() -> new ValidationException("Event not found"));
 
-        final Ticket ticket = anEvent.reserveTicket(customer.getCustomerId());
+        final EventTicket ticket = anEvent.reserveTicket(customer.getCustomerId());
         
-        ticketRepository.create(ticket);
         eventRepository.update(anEvent);
 
-        return new Output(anEvent.getEventId().value(), ticket.ticketId().value(), ticket.status().name(), ticket.reservedAt());
+        return new Output(anEvent.getEventId().value(), ticket.getEventTicketId().value(), Instant.now());
     }
 
     public record Input(String eventId, String customerId) {}
-    public record Output(String eventId, String ticketId,  String ticketStatus, Instant reservationDate) {}
+    public record Output(String eventId,  String eventTicketId, Instant reservationDate) {}
 }

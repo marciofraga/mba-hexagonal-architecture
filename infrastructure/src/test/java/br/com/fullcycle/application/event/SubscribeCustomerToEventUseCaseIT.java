@@ -52,7 +52,6 @@ class SubscribeCustomerToEventUseCaseIT extends AbstractIntegrationTest {
 
         assertEquals(aEvent.getEventId().value(), output.eventId());
         assertNotNull(output.reservationDate());
-        assertEquals(TicketStatus.PENDING.name(), output.ticketStatus());
     }
 
     @Test
